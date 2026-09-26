@@ -1,0 +1,21 @@
+.venv/
+.yolo/
+.torch-cache/
+__pycache__/
+*.py[cod]
+
+# Local/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Archived and generated training artifacts
+_보관/
+runs/
+outputs/
+dataset/
+
+# Downloaded source media and automatically fetched base weights
+data/raw/
+models/yolo*.pt

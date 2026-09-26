@@ -1,0 +1,5 @@
+names:
+  0: woni_face
+path: "./data/face_dataset"
+train: images/train
+val: images/val

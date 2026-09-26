@@ -1,0 +1,3 @@
+ultralytics==8.4.162
+gradio==6.28.0
+pyserial==3.5
