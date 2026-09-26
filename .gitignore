@@ -1,7 +1,4 @@
 .venv/
-.yolo/
-.torch-cache/
-Ultralytics/
 __pycache__/
 *.py[cod]
 
@@ -15,8 +12,19 @@ Thumbs.db
 _보관/
 runs/
 outputs/
+logs/
 dataset/
 
-# Downloaded source media and automatically fetched base weights
+# Downloaded source media
 data/raw/
-models/yolo*.pt
+
+# Keep only the short demo video in Git.
+data/test/*
+!data/test/woni_10s_10fps.mp4
+
+# Generated Minami training datasets stay local or in Roboflow.
+data/minami_dataset/
+data/minami_annotations.json
+data/minami_dataset.yaml
+data/minami_review.jpg
+data/minami_roboflow.zip

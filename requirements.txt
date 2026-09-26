@@ -1,3 +1,5 @@
-ultralytics==8.4.162
 gradio==6.28.0
+opencv-python>=4.10
+pillow>=10,<13
 pyserial==3.5
+requests>=2.32,<3
