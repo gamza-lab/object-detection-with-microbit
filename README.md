@@ -79,11 +79,11 @@ Workflow ID: woni-face-vwoni-face-1-rfdetr-small-t1-logic
 
 ## API와 오류 로그
 
-앱은 Roboflow의 Deploy Workflow 화면에 표시되는 `POST /{workspace}/workflows/{workflow}` 경로를 사용합니다. API 키는 `Authorization: Bearer ...` 헤더로 보내고, 영상의 모든 프레임은 `inputs.image`의 base64 이미지 배열로 한 번에 전송합니다. 전체 요청을 4.5MB 안에 맞추도록 각 프레임의 해상도와 JPEG 품질을 자동 조절하며, 결과 좌표는 원본 영상 크기로 복원합니다.
+앱은 Roboflow의 Deploy Workflow 화면에 표시되는 `POST /{workspace}/workflows/{workflow}` 경로를 사용합니다. API 키는 `Authorization: Bearer ...` 헤더로 보내고, 영상의 모든 프레임은 `inputs.image`의 base64 이미지 배열로 한 번에 전송합니다. 전송할 프레임은 최대 너비 640px, JPEG 품질 60으로 변환하며 결과 좌표는 원본 영상 크기로 복원합니다.
 
 처리 순서는 `프레임 추출 → API 한 번 호출 → 전체 outputs 수신 → 모든 시각화 프레임 생성 → 원본 FPS로 캐시 무한 반복`입니다. API 응답과 시각화 준비가 모두 끝나기 전에는 추론 영상이 재생되지 않으며, 반복 중에는 API를 다시 호출하지 않습니다.
 
-요청·응답 상태, 프레임 번호, 지연 시간과 오류 본문은 `logs/app.log`에 기록됩니다. API 키 값은 `[REDACTED]`로 치환하며 로그 폴더는 Git에서 제외됩니다. 문제가 생기면 앱을 한 번 실행한 뒤 아래 명령으로 마지막 로그를 확인합니다.
+HTTP 상태와 오류 본문은 `logs/app.log`에 기록됩니다. API 키는 로그에 기록하지 않으며 로그 폴더는 Git에서 제외됩니다. 문제가 생기면 앱을 한 번 실행한 뒤 아래 명령으로 마지막 로그를 확인합니다.
 
 ```powershell
 Get-Content .\logs\app.log -Tail 50
@@ -93,7 +93,7 @@ Get-Content .\logs\app.log -Tail 50
 
 ## 로컬 테스트 영상
 
-원본 `data/raw/woni_VINDNiicjb4.mp4`는 그대로 보존합니다. 원본 앞 10초를 10fps로 변환한 `data/test/woni_10s_10fps.mp4`는 총 100프레임이며, 앱 화면의 예제로 선택할 수 있습니다. 원본과 테스트 영상은 모두 Git에서 제외됩니다.
+원본 `data/raw/woni_VINDNiicjb4.mp4`는 로컬에 그대로 보존하며 Git에서는 제외합니다. 원본 앞 10초를 10fps로 변환한 `data/test/woni_10s_10fps.mp4`는 총 100프레임이며, 앱 화면의 예제로 선택할 수 있도록 Git에 포함합니다.
 
 테스트할 때만 아래 값을 직접 입력합니다. 앱 기본값은 비어 있습니다.
 
