@@ -11,18 +11,25 @@ import gradio as gr
 import numpy as np
 import requests
 import serial
+
+# 프로젝트 안의 데이터·로그·임시 파일 경로는 실행 위치와 무관하게 찾도록 한다.
 ROOT = Path(__file__).resolve().parent
 os.environ["GRADIO_TEMP_DIR"] = str(ROOT / "outputs/tmp")
 API_URL = "https://serverless.roboflow.com"
 TEST_VIDEO = ROOT / "data/test/woni_10s_10fps.mp4"
 SMILE_SOUND = ROOT / "data/audio/geoje_yaho.wav"
 
+# API 오류를 화면에 모두 노출하지 않고 상세 내용은 로그 파일에 남긴다.
 (ROOT / "logs").mkdir(exist_ok=True)
 logging.basicConfig(filename=ROOT / "logs/app.log", level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("face-detection")
+
+# Gradio 이벤트가 동시에 직렬 포트를 열거나 쓰지 않도록 하나의 연결과 잠금을 공유한다.
 board = None
 board_lock = Lock()
+
+
 class SmileSoundPlayer:
     """무표정에서 웃음으로 바뀔 때만 소리를 재생합니다."""
 
@@ -33,6 +40,7 @@ class SmileSoundPlayer:
 
     def update(self, smiling):
         with self.lock:
+            # 웃는 상태가 유지되는 동안에는 매 프레임마다 소리가 반복되지 않게 한다.
             changed_to_smile = smiling and not self.was_smiling
             self.was_smiling = smiling
             if not changed_to_smile or self.playing:
@@ -96,6 +104,7 @@ def read_video(video_path):
         if not ok:
             break
         height, width = frame.shape[:2]
+        # 업로드 크기와 처리 시간을 줄이되 원본 종횡비는 유지한다.
         sent_width = min(width, 640)
         sent_height = round(height * sent_width / width)
         resized = cv2.resize(frame, (sent_width, sent_height))
@@ -111,6 +120,7 @@ def read_video(video_path):
 def request_predictions(images, workspace, workflow, api_key):
     """모든 프레임을 Roboflow Workflow에 한 번만 요청합니다."""
     endpoint = f"{API_URL}/{workspace.strip()}/workflows/{workflow.strip()}"
+    # 프레임마다 요청하지 않고 배열 하나로 보내 네트워크 왕복을 한 번으로 줄인다.
     response = requests.post(
         endpoint,
         headers={"Authorization": f"Bearer {api_key.strip()}"},
@@ -135,6 +145,7 @@ def prepare_frames(video_path, predictions, scales):
         if not ok:
             raise RuntimeError("영상 프레임을 읽지 못했습니다.")
         for item in frame_predictions:
+            # API 좌표는 축소 영상 기준이므로 원본 영상 크기로 다시 환산한다.
             x, y = item["x"] * scale_x, item["y"] * scale_y
             width, height = item["width"] * scale_x, item["height"] * scale_y
             left, top = int(x - width / 2), int(y - height / 2)
@@ -143,6 +154,7 @@ def prepare_frames(video_path, predictions, scales):
             label = f'{item["class"]} {item["confidence"]:.0%}'
             cv2.putText(frame, label, (left, max(25, top)), 0, 0.7, (0, 220, 0), 2)
         ok, jpeg = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 88])
+        # 이 모델은 웃는 얼굴만 탐지하므로 탐지 결과의 존재 여부가 웃음 상태가 된다.
         prepared.append((jpeg.tobytes(), bool(frame_predictions), len(frame_predictions)))
     capture.release()
     return prepared
@@ -158,6 +170,7 @@ def stream_video(video_path, workspace, workflow, api_key):
         frames = prepare_frames(video_path, predictions, scales)
         sound = SmileSoundPlayer()
 
+        # API는 최초 한 번만 호출하고, 가공된 프레임은 사용자가 중지할 때까지 반복한다.
         while True:
             started = time.perf_counter()
             for index, (jpeg, smiling, count) in enumerate(frames, start=1):
@@ -166,6 +179,7 @@ def stream_video(video_path, workspace, workflow, api_key):
                 microbit_status = send_face(smiling)
                 status = f"프레임 {index}/{len(frames)} · 탐지 {count}개 · {microbit_status}"
                 yield frame[:, :, ::-1], make_face_image(smiling), status
+                # 인코딩·출력에 걸린 시간을 빼서 원본 영상의 FPS에 가깝게 재생한다.
                 time.sleep(max(0, index / fps - (time.perf_counter() - started)))
     except Exception as error:
         logger.exception("video failed")
@@ -174,6 +188,7 @@ def stream_video(video_path, workspace, workflow, api_key):
         send_face(False)
 
 
+# 화면 구성과 버튼 이벤트 연결
 with gr.Blocks(title="얼굴 탐지") as app:
     gr.Markdown("# 얼굴 탐지\n전체 영상을 한 번 추론한 뒤 결과를 반복 재생합니다.")
     workspace = gr.Textbox(label="Roboflow Workspace ID")
@@ -196,4 +211,5 @@ with gr.Blocks(title="얼굴 탐지") as app:
 
 
 if __name__ == "__main__":
+    # 한 번에 영상 하나만 처리해 메모리 사용량과 직렬 포트 충돌을 제한한다.
     app.queue(default_concurrency_limit=1).launch(server_name="127.0.0.1", server_port=7862)

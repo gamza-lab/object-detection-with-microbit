@@ -104,14 +104,6 @@ Workflow ID: woni-face-vwoni-face-1-rfdetr-small-t1-logic
 
 배포 화면에 표시된 **0.1875크레딧/1,000장** 기준으로 100프레임 전체 추론은 약 **0.01875크레딧**입니다. 실제 단가는 모델과 현재 Roboflow 정책에 따라 달라질 수 있으므로 배포 화면의 표시를 우선합니다.
 
-## 미나미 전용 데이터셋
-
-`data/minami_roboflow.zip`은 미나미 얼굴 80장을 `minami_face` 단일 클래스로 라벨링한 Roboflow 업로드용 YOLO 데이터셋입니다. 학습 64장, 검증 8장, 평가 8장으로 나뉘며, [미나미 원본 영상](https://www.youtube.com/watch?v=heifaIjlSUc)의 여러 장소·표정·거리에서 프레임을 골랐습니다.
-
-Roboflow에서 원이 프로젝트와 분리된 새 Object Detection 프로젝트를 만든 뒤 ZIP을 업로드합니다. 업로드 미리보기에서 클래스가 `minami_face`인지 확인하고 Dataset Version을 생성해 RF-DETR Small로 학습합니다. 학습 완료 후 새 Workflow를 배포하고 앱에는 그 Workflow의 Workspace ID와 Workflow ID를 입력합니다.
-
-전체 박스 검수 결과는 `data/minami_review.jpg`, 프레임별 시간과 좌표는 `data/minami_annotations.json`에 있습니다. 데이터셋을 다시 만들 때는 Git에서 제외된 `data/raw/minami_source.mp4`가 필요하며 `scripts/prepare_minami_dataset.py`를 실행합니다.
-
 ## 마이크로비트 연결
 
 [MakeCode](https://makecode.microbit.org/)에서 새 프로젝트를 만들고 Python을 선택해 `microbit/main.py`를 붙여 넣어 다운로드합니다. MakeCode 장치 연결을 해제한 뒤 앱에 COM 포트를 입력합니다.
@@ -133,7 +125,5 @@ Roboflow에서 원이 프로젝트와 분리된 새 Object Detection 프로젝�
 - `data/raw/`: 로컬 원본 영상(Git 제외)
 - `data/test/`: 로컬 테스트 영상(Git 제외)
 - `data/audio/geoje_yaho.wav`: smile 전환 시 재생하는 효과음
-- `data/minami_dataset/`: 미나미 얼굴 80장과 YOLO 라벨
-- `data/minami_roboflow.zip`: 미나미 전용 Roboflow 업로드 파일
 
 출처: [원본 영상](https://www.youtube.com/watch?v=VINDNiicjb4), [IU-detection](https://github.com/whyz-dev/IU-detection), [Roboflow Inference](https://inference.roboflow.com/quickstart/roboflow_ecosystem/)
